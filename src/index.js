@@ -99,7 +99,7 @@ function checkRequiredSections(skill) {
 }
 
 function checkValidationCommands(skill, scripts) {
-  const commands = extractCommands(skill).filter((command) => command.startsWith("npm run "));
+  const commands = [...new Set(extractCommands(skill).filter((command) => command.startsWith("npm run ")))];
   const scriptNames = new Set(Object.keys(scripts));
   return commands
     .map((command) => command.replace(/^npm run /, "").trim())
