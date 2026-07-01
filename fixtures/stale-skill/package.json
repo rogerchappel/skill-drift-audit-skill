@@ -1,0 +1,7 @@
+{
+  "name": "stale-example-skill",
+  "scripts": {
+    "check": "node --check bin/example.js",
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "clean-example-skill",
+  "scripts": {
+    "check": "node --check bin/example.js",
+    "test": "node --test",
+    "smoke": "node bin/example.js fixtures/input.json"
+  }
+}
