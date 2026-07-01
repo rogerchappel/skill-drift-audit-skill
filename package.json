@@ -1,0 +1,36 @@
+{
+  "name": "skill-drift-audit-skill",
+  "version": "0.1.0",
+  "description": "Audit repo-local SKILL.md files against docs, scripts, examples, and release notes.",
+  "type": "module",
+  "bin": {
+    "skill-drift-audit": "./bin/skill-drift-audit.js"
+  },
+  "scripts": {
+    "check": "node --check bin/skill-drift-audit.js && node --check src/index.js",
+    "test": "node --test",
+    "smoke": "node bin/skill-drift-audit.js scan fixtures/stale-skill --format markdown && node bin/skill-drift-audit.js plan fixtures/stale-skill --output tmp/stale-plan.md",
+    "package:smoke": "npm pack --dry-run"
+  },
+  "keywords": [
+    "agent-skill",
+    "docs-audit",
+    "drift-detection",
+    "release-readiness"
+  ],
+  "author": "Roger Chappel",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "docs",
+    "fixtures",
+    "scripts",
+    "src",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ]
+}
