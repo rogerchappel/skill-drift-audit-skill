@@ -45,4 +45,9 @@ npm run check
 npm test
 npm run smoke
 npm run package:smoke
+npm run release:check
 ```
+
+`npm run package:smoke` performs a dry-run npm pack and asserts that the CLI,
+library source, clean and stale fixtures, release notes, skill instructions,
+license, and security policy are present in the tarball.
