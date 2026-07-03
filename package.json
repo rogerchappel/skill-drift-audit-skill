@@ -11,7 +11,8 @@
     "test": "node --test",
     "smoke": "node bin/skill-drift-audit.js scan fixtures/stale-skill --format markdown && node bin/skill-drift-audit.js plan fixtures/stale-skill --output tmp/stale-plan.md",
     "package:smoke": "node scripts/package-smoke.mjs",
-    "release:check": "npm run check && npm test && npm run smoke && npm run package:smoke"
+    "release:check": "npm run check && npm test && npm run smoke && npm run package:smoke",
+    "lint": "npm run check"
   },
   "keywords": [
     "agent-skill",
