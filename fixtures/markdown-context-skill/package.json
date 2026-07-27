@@ -1,0 +1,6 @@
+{
+  "name": "markdown-context-example-skill",
+  "scripts": {
+    "test": "node --test"
+  }
+}
