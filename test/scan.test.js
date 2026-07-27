@@ -29,6 +29,37 @@ test("stale skill detects missing example path and placeholder secret", () => {
   assert.equal(report.findings.some((finding) => finding.code === "placeholder-secret"), true);
 });
 
+test("example headings do not satisfy required skill sections", () => {
+  const report = scanRepo("fixtures/markdown-context-skill");
+  const codes = new Set(report.findings.map((finding) => finding.code));
+  assert.equal(codes.has("missing-required-inputs"), true);
+  assert.equal(codes.has("missing-side-effect-boundaries"), true);
+  assert.equal(codes.has("missing-approval-requirements"), true);
+  assert.equal(codes.has("missing-validation-workflow"), true);
+});
+
+test("variable-length tilde and backtick fences expose executable drift", () => {
+  const report = scanRepo("fixtures/markdown-context-skill");
+  const messages = report.findings.map((finding) => finding.message);
+  assert.equal(messages.some((message) => message.includes('"missing-tilde"')), true);
+  assert.equal(messages.some((message) => message.includes('"missing-backtick"')), true);
+  assert.equal(messages.some((message) => message.includes("scripts/missing-tilde.js")), true);
+  assert.equal(messages.some((message) => message.includes("examples/missing-backtick.js")), true);
+});
+
+test("CRLF fenced commands are checked", () => {
+  const fixture = "fixtures/markdown-context-skill/SKILL.md";
+  const original = fs.readFileSync(fixture, "utf8");
+  fs.writeFileSync(fixture, original.replace(/\n/g, "\r\n"));
+  try {
+    const report = scanRepo("fixtures/markdown-context-skill");
+    assert.equal(report.findings.some((finding) => finding.message.includes('"missing-tilde"')), true);
+    assert.equal(report.findings.some((finding) => finding.message.includes("examples/missing-backtick.js")), true);
+  } finally {
+    fs.writeFileSync(fixture, original);
+  }
+});
+
 test("renders JSON report", () => {
   const output = renderReport(scanRepo("fixtures/clean-skill"), "json");
   const parsed = JSON.parse(output);

@@ -82,6 +82,7 @@ export function renderPlan(report) {
 }
 
 function checkRequiredSections(skill) {
+  const markdown = parseMarkdownContexts(skill);
   const checks = [
     ["Side-Effect Boundaries", "high", "Add explicit side-effect boundaries."],
     ["Approval Requirements", "high", "Document approval requirements before external actions."],
@@ -89,7 +90,7 @@ function checkRequiredSections(skill) {
     ["Required Inputs", "medium", "List required tools and inputs."]
   ];
   return checks
-    .filter(([heading]) => !hasHeading(skill, heading))
+    .filter(([heading]) => !hasHeading(markdown.prose, heading))
     .map(([heading, severity, action]) => ({
       code: `missing-${slug(heading)}`,
       severity,
@@ -155,15 +156,54 @@ function checkPlaceholderSecrets(skill) {
 
 function extractCommands(markdown) {
   const commands = [];
-  const fencePattern = /```(?:sh|bash|shell)?\n([\s\S]*?)```/g;
-  let match;
-  while ((match = fencePattern.exec(markdown))) {
-    for (const line of match[1].split(/\r?\n/)) {
+  for (const block of parseMarkdownContexts(markdown).fencedCode) {
+    if (!/^(?:sh|bash|shell)?(?:\s|$)/i.test(block.info)) continue;
+    for (const line of block.content) {
       const command = line.trim().replace(/^\$ /, "");
       if (command) commands.push(command);
     }
   }
   return commands;
+}
+
+function parseMarkdownContexts(markdown) {
+  const prose = [];
+  const fencedCode = [];
+  const lines = markdown.split(/\r?\n/);
+  let fence = null;
+
+  for (const line of lines) {
+    if (fence) {
+      const closing = line.match(/^ {0,3}(`+|~+)\s*$/);
+      if (closing && closing[1][0] === fence.marker && closing[1].length >= fence.length) {
+        fencedCode.push(fence);
+        fence = null;
+      } else {
+        fence.content.push(line);
+      }
+      prose.push("");
+      continue;
+    }
+
+    const opening = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (opening && !(opening[1][0] === "`" && opening[2].includes("`"))) {
+      fence = {
+        marker: opening[1][0],
+        length: opening[1].length,
+        info: opening[2].trim(),
+        content: []
+      };
+      prose.push("");
+      continue;
+    }
+
+    // Four-space and tab-indented Markdown code cannot define document headings.
+    prose.push(/^(?: {4}|\t)/.test(line) ? "" : line);
+  }
+
+  // An unclosed fence still consumes the remainder of the Markdown document.
+  if (fence) fencedCode.push(fence);
+  return { prose: prose.join("\n"), fencedCode };
 }
 
 function listDocs(repoPath) {

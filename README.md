@@ -31,6 +31,11 @@ skill-drift-audit plan . --output tmp/skill-drift-plan.md
 - Missing changelog or release-candidate notes.
 - Obvious placeholder secret values in skill instructions.
 
+Required headings are recognized only in Markdown prose, not inside fenced or
+indented code examples. Executable checks recognize `sh`, `bash`, and `shell`
+blocks using backtick or tilde fences, including variable-length delimiters and
+LF or CRLF line endings.
+
 ## Safety Notes
 
 - Reads local repo files only.
