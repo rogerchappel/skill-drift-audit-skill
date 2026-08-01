@@ -26,6 +26,6 @@ node bin/example.js fixtures/input.json
 
 ```sh
 npm run check
-npm test
+npm run test -- --test-name-pattern clean
 npm run smoke
 ```
