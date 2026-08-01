@@ -100,10 +100,10 @@ function checkRequiredSections(skill) {
 }
 
 function checkValidationCommands(skill, scripts) {
-  const commands = [...new Set(extractCommands(skill).filter((command) => command.startsWith("npm run ")))];
+  const commands = [...new Set(extractCommands(skill))];
   const scriptNames = new Set(Object.keys(scripts));
   return commands
-    .map((command) => command.replace(/^npm run /, "").trim())
+    .map((command) => command.match(/^npm run\s+(\S+)/)?.[1])
     .filter((name) => name && !scriptNames.has(name))
     .map((name) => ({
       code: "stale-validation-command",
