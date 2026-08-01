@@ -8,6 +8,12 @@ try {
   if (command === "scan") {
     const repoPath = args[1] ?? ".";
     const format = readOption(args, "--format") ?? "markdown";
+    if (args.includes("--format") && !readOption(args, "--format")) {
+      usage("--format requires a value");
+    }
+    if (!new Set(["markdown", "json"]).has(format)) {
+      usage("--format must be markdown or json");
+    }
     process.stdout.write(renderReport(scanRepo(repoPath), format));
   } else if (command === "plan") {
     const repoPath = args[1] ?? ".";
@@ -26,7 +32,8 @@ try {
 
 function readOption(values, name) {
   const index = values.indexOf(name);
-  return index === -1 ? undefined : values[index + 1];
+  const value = index === -1 ? undefined : values[index + 1];
+  return value?.startsWith("--") ? undefined : value;
 }
 
 function usage(message) {

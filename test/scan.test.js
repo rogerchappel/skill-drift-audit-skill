@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import test from "node:test";
 import { renderPlan, renderReport, scanRepo, writePlan } from "../src/index.js";
 
@@ -8,6 +8,11 @@ test("clean skill fixture has no high findings", () => {
   const report = scanRepo("fixtures/clean-skill");
   assert.equal(report.summary.high, 0);
   assert.equal(report.summary.medium, 0);
+});
+
+test("validation commands allow arguments after the npm script name", () => {
+  const report = scanRepo("fixtures/clean-skill");
+  assert.equal(report.findings.some((finding) => finding.code === "stale-validation-command"), false);
 });
 
 test("stale skill fixture reports missing safety sections", () => {
@@ -82,3 +87,14 @@ test("CLI scan emits markdown", () => {
   assert.match(output, /# Skill Drift Audit: stale-skill/);
   assert.match(output, /Findings:/);
 });
+
+for (const cliArgs of [
+  ["scan", "fixtures/clean-skill", "--format"],
+  ["scan", "fixtures/clean-skill", "--format", "yaml"]
+]) {
+  test(`CLI rejects invalid format arguments: ${cliArgs.join(" ")}`, () => {
+    const result = spawnSync("node", ["bin/skill-drift-audit.js", ...cliArgs], { encoding: "utf8" });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /--format (?:requires|must be)/);
+  });
+}

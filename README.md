@@ -20,6 +20,8 @@ skill-drift-audit plan . --output tmp/skill-drift-plan.md
 ```
 
 `scan` prints findings. `plan` writes a dry-run refresh plan to the requested output path and never edits `SKILL.md`.
+The `--format` value is required when the option is present and must be either
+`markdown` or `json`; invalid values exit nonzero with a usage error.
 
 ## Checks
 
@@ -34,7 +36,8 @@ skill-drift-audit plan . --output tmp/skill-drift-plan.md
 Required headings are recognized only in Markdown prose, not inside fenced or
 indented code examples. Executable checks recognize `sh`, `bash`, and `shell`
 blocks using backtick or tilde fences, including variable-length delimiters and
-LF or CRLF line endings.
+LF or CRLF line endings. For `npm run <script> -- <args>` commands, the script
+name is checked independently of arguments passed through to it.
 
 ## Safety Notes
 
