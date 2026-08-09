@@ -15,6 +15,18 @@ test("validation commands allow arguments after the npm script name", () => {
   assert.equal(report.findings.some((finding) => finding.code === "stale-validation-command"), false);
 });
 
+test("validation commands inspect every npm run in a shell command chain", () => {
+  const fixture = "fixtures/clean-skill/SKILL.md";
+  const original = fs.readFileSync(fixture, "utf8");
+  fs.writeFileSync(fixture, original.replace("npm run smoke\n", "npm run smoke && npm run missing\n"));
+  try {
+    const report = scanRepo("fixtures/clean-skill");
+    assert.equal(report.findings.some((finding) => finding.message.includes('"missing"')), true);
+  } finally {
+    fs.writeFileSync(fixture, original);
+  }
+});
+
 test("stale skill fixture reports missing safety sections", () => {
   const report = scanRepo("fixtures/stale-skill");
   assert.equal(report.summary.high >= 2, true);
@@ -96,5 +108,20 @@ for (const cliArgs of [
     const result = spawnSync("node", ["bin/skill-drift-audit.js", ...cliArgs], { encoding: "utf8" });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /--format (?:requires|must be)/);
+  });
+}
+
+for (const cliArgs of [
+  ["scan", "fixtures/clean-skill", "--bogus"],
+  ["scan", "fixtures/clean-skill", "trailing"],
+  ["scan", "fixtures/clean-skill", "--format", "json", "trailing"],
+  ["plan", "fixtures/clean-skill", "--output", "tmp/plan.md", "trailing"],
+  ["plan", "fixtures/clean-skill", "--bogus", "value"]
+]) {
+  test(`CLI rejects unknown options and trailing arguments: ${cliArgs.join(" ")}`, () => {
+    const result = spawnSync("node", ["bin/skill-drift-audit.js", ...cliArgs], { encoding: "utf8" });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /(?:unknown option|unexpected argument)/);
+    assert.match(result.stderr, /Usage:/);
   });
 }

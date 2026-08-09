@@ -6,18 +6,15 @@ const command = args[0];
 
 try {
   if (command === "scan") {
-    const repoPath = args[1] ?? ".";
-    const format = readOption(args, "--format") ?? "markdown";
-    if (args.includes("--format") && !readOption(args, "--format")) {
-      usage("--format requires a value");
-    }
+    const { repoPath, options } = parseArguments(args.slice(1), new Set(["--format"]));
+    const format = options.get("--format") ?? "markdown";
     if (!new Set(["markdown", "json"]).has(format)) {
       usage("--format must be markdown or json");
     }
     process.stdout.write(renderReport(scanRepo(repoPath), format));
   } else if (command === "plan") {
-    const repoPath = args[1] ?? ".";
-    const output = readOption(args, "--output");
+    const { repoPath, options } = parseArguments(args.slice(1), new Set(["--output"]));
+    const output = options.get("--output");
     if (!output) usage("plan requires --output <path>");
     const report = scanRepo(repoPath);
     writePlan(report, output);
@@ -30,10 +27,25 @@ try {
   process.exitCode = 1;
 }
 
-function readOption(values, name) {
-  const index = values.indexOf(name);
-  const value = index === -1 ? undefined : values[index + 1];
-  return value?.startsWith("--") ? undefined : value;
+function parseArguments(values, allowedOptions) {
+  let repoPath;
+  const options = new Map();
+  for (let index = 0; index < values.length; index += 1) {
+    const value = values[index];
+    if (value.startsWith("--")) {
+      if (!allowedOptions.has(value)) usage(`unknown option: ${value}`);
+      if (options.has(value)) usage(`option may only be provided once: ${value}`);
+      const optionValue = values[index + 1];
+      if (!optionValue || optionValue.startsWith("--")) usage(`${value} requires a value`);
+      options.set(value, optionValue);
+      index += 1;
+    } else if (repoPath === undefined) {
+      repoPath = value;
+    } else {
+      usage(`unexpected argument: ${value}`);
+    }
+  }
+  return { repoPath: repoPath ?? ".", options };
 }
 
 function usage(message) {
