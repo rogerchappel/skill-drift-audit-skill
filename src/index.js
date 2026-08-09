@@ -100,17 +100,24 @@ function checkRequiredSections(skill) {
 }
 
 function checkValidationCommands(skill, scripts) {
-  const commands = [...new Set(extractCommands(skill))];
-  const scriptNames = new Set(Object.keys(scripts));
-  return commands
-    .map((command) => command.match(/^npm run\s+(\S+)/)?.[1])
-    .filter((name) => name && !scriptNames.has(name))
+  const referencedScripts = [...new Set(extractCommands(skill).flatMap(extractNpmRunScripts))];
+  const definedScripts = new Set(Object.keys(scripts));
+  return referencedScripts
+    .filter((name) => !definedScripts.has(name))
     .map((name) => ({
       code: "stale-validation-command",
       severity: "high",
       message: `SKILL.md references npm script "${name}" but package.json does not define it.`,
       action: `Update SKILL.md or add package script "${name}".`
     }));
+}
+
+function extractNpmRunScripts(command) {
+  const names = [];
+  const pattern = /(?:^|&&|\|\||[;|])\s*npm\s+run\s+([^\s;&|]+)/g;
+  let match;
+  while ((match = pattern.exec(command))) names.push(match[1]);
+  return names;
 }
 
 function checkExamples(skill, repoPath) {
