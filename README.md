@@ -5,7 +5,7 @@ Audit a repo-local `SKILL.md` against README, docs, package scripts, changelog, 
 ## Quickstart
 
 ```sh
-npm install
+npm ci
 npm test
 npm run smoke
 node bin/skill-drift-audit.js scan fixtures/stale-skill --format markdown
@@ -51,6 +51,18 @@ segment in ordinary `&&`, `||`, semicolon, and pipeline command chains is checke
 - Does not perform network lookups or marketplace checks.
 
 ## Verification
+
+From a clean checkout, install the exact dependency tree recorded in
+`package-lock.json`, then run the complete release gate:
+
+```sh
+git clone https://github.com/rogerchappel/skill-drift-audit-skill.git
+cd skill-drift-audit-skill
+npm ci
+npm run release:check
+```
+
+For focused checks in an existing checkout:
 
 ```sh
 npm run check
