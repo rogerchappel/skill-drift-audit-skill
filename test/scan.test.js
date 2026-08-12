@@ -55,6 +55,43 @@ test("example headings do not satisfy required skill sections", () => {
   assert.equal(codes.has("missing-validation-workflow"), true);
 });
 
+for (const heading of [
+  "# Required Inputs",
+  "#### Required Inputs",
+  "###### Required Inputs",
+  "## Required Inputs ##",
+  "   ##### Required Inputs ###"
+]) {
+  test(`valid ATX heading satisfies a required skill section: ${heading}`, () => {
+    const fixture = "fixtures/clean-skill/SKILL.md";
+    const original = fs.readFileSync(fixture, "utf8");
+    fs.writeFileSync(fixture, original.replace("## Required Inputs", heading));
+    try {
+      const report = scanRepo("fixtures/clean-skill");
+      assert.equal(report.findings.some((finding) => finding.code === "missing-required-inputs"), false);
+    } finally {
+      fs.writeFileSync(fixture, original);
+    }
+  });
+}
+
+test("shell-quoted missing example paths are reported", () => {
+  const fixture = "fixtures/clean-skill/SKILL.md";
+  const original = fs.readFileSync(fixture, "utf8");
+  fs.writeFileSync(fixture, original.replace(
+    "node bin/example.js fixtures/input.json",
+    "node bin/example.js \"fixtures/missing-double.json\" 'docs/missing-single.md'"
+  ));
+  try {
+    const report = scanRepo("fixtures/clean-skill");
+    const messages = report.findings.map((finding) => finding.message);
+    assert.equal(messages.some((message) => message.includes("fixtures/missing-double.json")), true);
+    assert.equal(messages.some((message) => message.includes("docs/missing-single.md")), true);
+  } finally {
+    fs.writeFileSync(fixture, original);
+  }
+});
+
 test("variable-length tilde and backtick fences expose executable drift", () => {
   const report = scanRepo("fixtures/markdown-context-skill");
   const messages = report.findings.map((finding) => finding.message);

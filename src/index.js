@@ -124,8 +124,9 @@ function checkExamples(skill, repoPath) {
   const commands = extractCommands(skill);
   const referenced = new Set();
   for (const command of commands) {
-    for (const token of command.split(/\s+/)) {
-      if (/^(fixtures|docs|examples|bin|scripts)\//.test(token)) referenced.add(token.replace(/[),.;]$/, ""));
+    for (const token of splitShellWords(command)) {
+      const relative = token.replace(/[),.;]$/, "");
+      if (/^(fixtures|docs|examples|bin|scripts)\//.test(relative)) referenced.add(relative);
     }
   }
   return [...referenced]
@@ -136,6 +137,36 @@ function checkExamples(skill, repoPath) {
       message: `Example references missing path ${relative}.`,
       action: `Create ${relative} or remove the stale example.`
     }));
+}
+
+function splitShellWords(command) {
+  const words = [];
+  let word = "";
+  let quote = null;
+  let escaped = false;
+
+  for (const character of command) {
+    if (escaped) {
+      word += character;
+      escaped = false;
+    } else if (character === "\\" && quote !== "'") {
+      escaped = true;
+    } else if (quote) {
+      if (character === quote) quote = null;
+      else word += character;
+    } else if (character === "'" || character === "\"") {
+      quote = character;
+    } else if (/\s/.test(character)) {
+      if (word) words.push(word);
+      word = "";
+    } else {
+      word += character;
+    }
+  }
+
+  if (escaped) word += "\\";
+  if (word) words.push(word);
+  return words;
 }
 
 function checkReleaseEvidence(repoPath, docs) {
@@ -241,7 +272,10 @@ function readJson(filePath) {
 }
 
 function hasHeading(markdown, heading) {
-  return new RegExp(`^#{1,3}\\s+${escapeRegExp(heading)}\\s*$`, "im").test(markdown);
+  return new RegExp(
+    `^ {0,3}#{1,6}[\\t ]+${escapeRegExp(heading)}(?:[\\t ]+#+)?[\\t ]*$`,
+    "im"
+  ).test(markdown);
 }
 
 function slug(value) {
