@@ -36,10 +36,14 @@ to scan the current directory.
 - Missing changelog or release-candidate notes.
 - Obvious placeholder secret values in skill instructions.
 
-Required headings are recognized only in Markdown prose, not inside fenced or
+Required headings use Markdown ATX syntax at levels 1 through 6. They may have
+up to three leading spaces and an optional, whitespace-separated closing `#`
+sequence. Headings are recognized only in Markdown prose, not inside fenced or
 indented code examples. Executable checks recognize `sh`, `bash`, and `shell`
 blocks using backtick or tilde fences, including variable-length delimiters and
-LF or CRLF line endings. For `npm run <script> -- <args>` commands, the script
+LF or CRLF line endings. Referenced paths under `fixtures`, `docs`, `examples`,
+`bin`, and `scripts` are checked when unquoted or surrounded by ordinary single
+or double shell quotes. For `npm run <script> -- <args>` commands, the script
 name is checked independently of arguments passed through to it. Every `npm run`
 segment in ordinary `&&`, `||`, semicolon, and pipeline command chains is checked.
 
