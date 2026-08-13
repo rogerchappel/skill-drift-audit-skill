@@ -60,8 +60,12 @@ export function renderReport(report, format = "markdown") {
 }
 
 export function writePlan(report, outputPath) {
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, renderPlan(report));
+  const absoluteOutput = path.resolve(outputPath);
+  if (fs.existsSync(absoluteOutput)) {
+    throw new Error(`Refusing to overwrite existing file: ${absoluteOutput}`);
+  }
+  fs.mkdirSync(path.dirname(absoluteOutput), { recursive: true });
+  fs.writeFileSync(absoluteOutput, renderPlan(report), { flag: "wx" });
 }
 
 export function renderPlan(report) {

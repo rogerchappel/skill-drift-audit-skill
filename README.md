@@ -19,7 +19,9 @@ skill-drift-audit scan fixtures/stale-skill --format json
 skill-drift-audit plan . --output tmp/skill-drift-plan.md
 ```
 
-`scan` prints findings. `plan` writes a dry-run refresh plan to the requested output path and never edits `SKILL.md`.
+`scan` prints findings. `plan` creates a dry-run refresh plan at the requested
+output path. It refuses to overwrite any existing file, including `SKILL.md`,
+README, documentation, package metadata, and other audited source files.
 The `--format` value is required when the option is present and must be either
 `markdown` or `json`; invalid values exit nonzero with a usage error.
 Both commands reject unknown options, duplicate options, and extra positional
@@ -50,8 +52,9 @@ segment in ordinary `&&`, `||`, semicolon, and pipeline command chains is checke
 ## Safety Notes
 
 - Reads local repo files only.
-- Writes only when `plan --output <path>` is provided.
-- Does not rewrite skills automatically.
+- Writes only when `plan --output <path>` names a new file.
+- Refuses existing output files, including normalized aliases such as
+  `docs/../SKILL.md`, before creating directories or writing.
 - Does not perform network lookups or marketplace checks.
 
 ## Verification
