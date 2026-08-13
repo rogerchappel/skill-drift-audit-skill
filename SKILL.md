@@ -11,7 +11,11 @@ Use this skill when reviewing or refreshing an agent-skill repo and you need evi
 
 ## Side-Effect Boundaries
 
-`scan` reads local files and writes reports to stdout. `plan` writes only to an explicit `--output` path. The skill must not rewrite `SKILL.md`, call external services, publish packages, or modify release artifacts by default.
+`scan` reads local files and writes reports to stdout. `plan` creates a new file
+only at an explicit `--output` path and refuses any path that resolves to an
+existing file, including `SKILL.md` and other audited sources. The skill must
+not call external services, publish packages, or modify release artifacts by
+default.
 
 ## Approval Requirements
 
