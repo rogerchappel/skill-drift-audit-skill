@@ -121,12 +121,50 @@ test("renders JSON report", () => {
 });
 
 test("writes dry-run plan", () => {
-  const output = "tmp/test-plan.md";
+  const output = `tmp/test-plan-${process.pid}.md`;
+  fs.rmSync(output, { force: true });
   const report = scanRepo("fixtures/stale-skill");
   writePlan(report, output);
   const plan = fs.readFileSync(output, "utf8");
   assert.match(plan, /dry-run plan/i);
   assert.match(renderPlan(report), /Skill Drift Refresh Plan/);
+});
+
+for (const output of [
+  "fixtures/clean-skill/SKILL.md",
+  "./fixtures/clean-skill/SKILL.md",
+  "fixtures/stale-skill/../clean-skill/SKILL.md"
+]) {
+  test(`CLI refuses existing plan output: ${output}`, () => {
+    const before = fs.readFileSync("fixtures/clean-skill/SKILL.md", "utf8");
+    const result = spawnSync("node", [
+      "bin/skill-drift-audit.js",
+      "plan",
+      "fixtures/clean-skill",
+      "--output",
+      output
+    ], { encoding: "utf8" });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Refusing to overwrite existing file/);
+    assert.equal(fs.readFileSync("fixtures/clean-skill/SKILL.md", "utf8"), before);
+  });
+}
+
+test("CLI writes a plan to a new output path", () => {
+  const output = `tmp/new-plan-${process.pid}.md`;
+  fs.rmSync(output, { force: true });
+  const result = spawnSync("node", [
+    "bin/skill-drift-audit.js",
+    "plan",
+    "fixtures/clean-skill",
+    "--output",
+    output
+  ], { encoding: "utf8" });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Wrote dry-run plan/);
+  assert.match(fs.readFileSync(output, "utf8"), /dry-run plan/i);
 });
 
 test("CLI scan emits markdown", () => {
