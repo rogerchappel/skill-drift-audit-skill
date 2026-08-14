@@ -129,7 +129,7 @@ function checkExamples(skill, repoPath) {
   const referenced = new Set();
   for (const command of commands) {
     for (const token of splitShellWords(command)) {
-      const relative = token.replace(/[),.;]$/, "");
+      const relative = token.replace(/[),.;]$/, "").replace(/^\.\//, "");
       if (/^(fixtures|docs|examples|bin|scripts)\//.test(relative)) referenced.add(relative);
     }
   }
