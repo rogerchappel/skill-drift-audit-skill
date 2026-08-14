@@ -92,6 +92,45 @@ test("shell-quoted missing example paths are reported", () => {
   }
 });
 
+test("explicit-relative missing example paths are reported", () => {
+  const fixture = "fixtures/clean-skill/SKILL.md";
+  const original = fs.readFileSync(fixture, "utf8");
+  fs.writeFileSync(fixture, original.replace(
+    "node bin/example.js fixtures/input.json",
+    "node ./bin/missing.js './fixtures/missing-single.json' \"./docs/missing-double.md\" ./examples/missing.js ./scripts/missing.js"
+  ));
+  try {
+    const report = scanRepo("fixtures/clean-skill");
+    const messages = report.findings.map((finding) => finding.message);
+    for (const relative of [
+      "bin/missing.js",
+      "fixtures/missing-single.json",
+      "docs/missing-double.md",
+      "examples/missing.js",
+      "scripts/missing.js"
+    ]) {
+      assert.equal(messages.some((message) => message.includes(relative)), true);
+    }
+  } finally {
+    fs.writeFileSync(fixture, original);
+  }
+});
+
+test("explicit-relative existing example paths are not reported", () => {
+  const fixture = "fixtures/clean-skill/SKILL.md";
+  const original = fs.readFileSync(fixture, "utf8");
+  fs.writeFileSync(fixture, original.replace(
+    "node bin/example.js fixtures/input.json",
+    "node ./bin/example.js './fixtures/input.json' \"./docs/RELEASE_CANDIDATE.md\""
+  ));
+  try {
+    const report = scanRepo("fixtures/clean-skill");
+    assert.equal(report.findings.some((finding) => finding.code === "missing-example-path"), false);
+  } finally {
+    fs.writeFileSync(fixture, original);
+  }
+});
+
 test("variable-length tilde and backtick fences expose executable drift", () => {
   const report = scanRepo("fixtures/markdown-context-skill");
   const messages = report.findings.map((finding) => finding.message);

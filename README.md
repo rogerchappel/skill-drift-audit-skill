@@ -45,9 +45,11 @@ indented code examples. Executable checks recognize `sh`, `bash`, and `shell`
 blocks using backtick or tilde fences, including variable-length delimiters and
 LF or CRLF line endings. Referenced paths under `fixtures`, `docs`, `examples`,
 `bin`, and `scripts` are checked when unquoted or surrounded by ordinary single
-or double shell quotes. For `npm run <script> -- <args>` commands, the script
-name is checked independently of arguments passed through to it. Every `npm run`
-segment in ordinary `&&`, `||`, semicolon, and pipeline command chains is checked.
+or double shell quotes. These paths may use either repository-relative spelling,
+such as `bin/example.js`, or explicit-relative spelling, such as
+`./bin/example.js`. For `npm run <script> -- <args>` commands, the script name is
+checked independently of arguments passed through to it. Every `npm run` segment
+in ordinary `&&`, `||`, semicolon, and pipeline command chains is checked.
 
 ## Safety Notes
 
