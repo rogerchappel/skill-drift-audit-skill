@@ -118,10 +118,58 @@ function checkValidationCommands(skill, scripts) {
 
 function extractNpmRunScripts(command) {
   const names = [];
-  const pattern = /(?:^|&&|\|\||[;|])\s*npm\s+run\s+([^\s;&|]+)/g;
-  let match;
-  while ((match = pattern.exec(command))) names.push(match[1]);
+  for (const segment of splitShellSegments(command)) {
+    const words = splitShellWords(segment);
+    let index = 0;
+    while (isEnvironmentAssignment(words[index])) index += 1;
+    if (words[index] === "env") {
+      index += 1;
+      while (isEnvironmentAssignment(words[index])) index += 1;
+    }
+    if (words[index] === "npm" && words[index + 1] === "run" && words[index + 2]) {
+      names.push(words[index + 2]);
+    }
+  }
   return names;
+}
+
+function splitShellSegments(command) {
+  const segments = [];
+  let segment = "";
+  let quote = null;
+  let escaped = false;
+
+  for (let index = 0; index < command.length; index += 1) {
+    const character = command[index];
+    if (escaped) {
+      segment += character;
+      escaped = false;
+    } else if (character === "\\" && quote !== "'") {
+      segment += character;
+      escaped = true;
+    } else if (quote) {
+      segment += character;
+      if (character === quote) quote = null;
+    } else if (character === "'" || character === "\"") {
+      segment += character;
+      quote = character;
+    } else if (character === "#" && (index === 0 || /\s/.test(command[index - 1]))) {
+      break;
+    } else if (character === ";" || character === "|" || (character === "&" && command[index + 1] === "&")) {
+      if (segment.trim()) segments.push(segment);
+      segment = "";
+      if (command[index + 1] === character) index += 1;
+    } else {
+      segment += character;
+    }
+  }
+
+  if (segment.trim()) segments.push(segment);
+  return segments;
+}
+
+function isEnvironmentAssignment(word) {
+  return typeof word === "string" && /^[A-Za-z_][A-Za-z0-9_]*=/.test(word);
 }
 
 function checkExamples(skill, repoPath) {
