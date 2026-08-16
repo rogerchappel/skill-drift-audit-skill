@@ -27,6 +27,55 @@ test("validation commands inspect every npm run in a shell command chain", () =>
   }
 });
 
+for (const { label, command } of [
+  { label: "leading assignment", command: "CI=1 npm run missing -- --verbose" },
+  { label: "multiple assignments", command: "NODE_ENV=test FORCE_COLOR=0 npm run missing argument" },
+  { label: "env invocation", command: "env CI=1 npm run missing -- --verbose" },
+  { label: "env after a directory change", command: "cd docs && env CI=1 npm run missing argument" },
+  { label: "assignment after OR", command: "npm run smoke || CI=1 npm run missing" },
+  { label: "env after semicolon", command: "npm run smoke; env CI=1 npm run missing" },
+  { label: "assignment in pipeline", command: "printf input | CI=1 npm run missing -- --verbose" }
+]) {
+  test(`validation commands support environment prefixes: ${label}`, () => {
+    withCleanSkillCommand(command, (report) => {
+      assert.equal(report.findings.some((finding) => finding.message.includes('"missing"')), true);
+    });
+  });
+}
+
+for (const lineEnding of ["LF", "CRLF"]) {
+  test(`environment-prefixed commands detect present and missing scripts with ${lineEnding}`, () => {
+    const separator = lineEnding === "CRLF" ? "\r\n" : "\n";
+    withCleanSkillCommand(
+      `env CI=1 npm run smoke -- --verbose${separator}CI=1 npm run missing argument`,
+      (report) => {
+        const stale = report.findings.filter((finding) => finding.code === "stale-validation-command");
+        assert.deepEqual(stale.map((finding) => finding.message.includes('"missing"')), [true]);
+      }
+    );
+  });
+}
+
+test("quoted prose and shell comments are not executable npm commands", () => {
+  withCleanSkillCommand(
+    'echo "npm run missing" && printf \'env CI=1 npm run also-missing\' # npm run commented-out',
+    (report) => {
+      assert.equal(report.findings.some((finding) => finding.code === "stale-validation-command"), false);
+    }
+  );
+});
+
+function withCleanSkillCommand(command, inspect) {
+  const fixture = "fixtures/clean-skill/SKILL.md";
+  const original = fs.readFileSync(fixture, "utf8");
+  fs.writeFileSync(fixture, original.replace("npm run smoke\n", `${command}\n`));
+  try {
+    inspect(scanRepo("fixtures/clean-skill"));
+  } finally {
+    fs.writeFileSync(fixture, original);
+  }
+}
+
 test("stale skill fixture reports missing safety sections", () => {
   const report = scanRepo("fixtures/stale-skill");
   assert.equal(report.summary.high >= 2, true);
