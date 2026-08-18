@@ -126,11 +126,45 @@ function extractNpmRunScripts(command) {
       index += 1;
       while (isEnvironmentAssignment(words[index])) index += 1;
     }
-    if (words[index] === "npm" && words[index + 1] === "run" && words[index + 2]) {
-      names.push(words[index + 2]);
+    if (words[index] !== "npm") continue;
+
+    index = skipNpmOptions(words, index + 1);
+    const npmCommand = words[index];
+    if (npmCommand === "test" || npmCommand === "start") {
+      names.push(npmCommand);
+      continue;
     }
+    if (npmCommand !== "run" && npmCommand !== "run-script") continue;
+
+    index = skipNpmOptions(words, index + 1);
+    if (words[index] && !words[index].startsWith("-")) names.push(words[index]);
   }
   return names;
+}
+
+const NPM_OPTIONS_WITH_VALUES = new Set([
+  "--cache",
+  "--jobs",
+  "--loglevel",
+  "--otp",
+  "--prefix",
+  "--registry",
+  "--scope",
+  "--userconfig",
+  "--workspace",
+  "-w"
+]);
+
+function skipNpmOptions(words, start) {
+  let index = start;
+  while (words[index]?.startsWith("-")) {
+    const [option] = words[index].split("=", 1);
+    index += 1;
+    if (NPM_OPTIONS_WITH_VALUES.has(option) && !words[index - 1].includes("=") && words[index]) {
+      index += 1;
+    }
+  }
+  return index;
 }
 
 function splitShellSegments(command) {
