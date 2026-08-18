@@ -47,13 +47,16 @@ LF or CRLF line endings. Referenced paths under `fixtures`, `docs`, `examples`,
 `bin`, and `scripts` are checked when unquoted or surrounded by ordinary single
 or double shell quotes. These paths may use either repository-relative spelling,
 such as `bin/example.js`, or explicit-relative spelling, such as
-`./bin/example.js`. For `npm run <script> -- <args>` commands, the script name is
-checked independently of arguments passed through to it. Every `npm run` segment
-in ordinary `&&`, `||`, semicolon, and pipeline command chains is checked. A
-segment may prefix `npm` with zero or more shell assignments (`NAME=value`) or
-with `env` followed by zero or more assignments, such as
-`CI=1 npm run check` or `env CI=1 npm run check`. Quoted text and shell comments
-are not treated as executable command segments.
+`./bin/example.js`. The `npm test` and `npm start` aliases are checked as the
+`test` and `start` scripts. Options before an npm command or before an `npm run`
+script name are skipped, including value-bearing workspace options, so an option
+such as `--silent` is never reported as a missing script. Arguments after the
+script name remain independent of that name. Every npm validation segment in
+ordinary `&&`, `||`, semicolon, and pipeline command chains is checked. A segment
+may prefix `npm` with zero or more shell assignments (`NAME=value`) or with `env`
+followed by zero or more assignments, such as `CI=1 npm test` or
+`env CI=1 npm run check`. Quoted text and shell comments are not treated as
+executable command segments.
 
 ## Safety Notes
 

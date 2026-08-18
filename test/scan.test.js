@@ -15,6 +15,50 @@ test("validation commands allow arguments after the npm script name", () => {
   assert.equal(report.findings.some((finding) => finding.code === "stale-validation-command"), false);
 });
 
+for (const { command, missing } of [
+  { command: "npm test", missing: null },
+  { command: "npm start", missing: "start" },
+  { command: "npm --silent run missing", missing: "missing" },
+  { command: "npm run --silent smoke", missing: null },
+  { command: "npm run --workspace docs missing", missing: "missing" },
+  { command: "npm --workspace docs run missing", missing: "missing" },
+  { command: "npm run --if-present missing", missing: "missing" },
+  { command: "CI=1 npm --silent test && npm run --silent smoke", missing: null }
+]) {
+  test(`validation commands parse npm invocation: ${command}`, () => {
+    withCleanSkillCommand(command, (report) => {
+      const stale = report.findings.filter((finding) => finding.code === "stale-validation-command");
+      assert.deepEqual(stale.map((finding) => finding.message), missing
+        ? [`SKILL.md references npm script "${missing}" but package.json does not define it.`]
+        : []);
+      assert.equal(stale.some((finding) => finding.message.includes('"--silent"')), false);
+    });
+  });
+}
+
+test("CLI reports npm aliases and option-bearing invocations from a fixture", () => {
+  const fixture = "fixtures/clean-skill/SKILL.md";
+  const original = fs.readFileSync(fixture, "utf8");
+  fs.writeFileSync(fixture, original.replace(
+    "npm run smoke\n",
+    "npm test && npm run --silent smoke && npm start\n"
+  ));
+  try {
+    const output = execFileSync(
+      "node",
+      ["bin/skill-drift-audit.js", "scan", "fixtures/clean-skill", "--format", "json"],
+      { encoding: "utf8" }
+    );
+    const report = JSON.parse(output);
+    const stale = report.findings.filter((finding) => finding.code === "stale-validation-command");
+    assert.deepEqual(stale.map((finding) => finding.message), [
+      'SKILL.md references npm script "start" but package.json does not define it.'
+    ]);
+  } finally {
+    fs.writeFileSync(fixture, original);
+  }
+});
+
 test("validation commands inspect every npm run in a shell command chain", () => {
   const fixture = "fixtures/clean-skill/SKILL.md";
   const original = fs.readFileSync(fixture, "utf8");
