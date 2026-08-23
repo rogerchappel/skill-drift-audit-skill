@@ -100,6 +100,40 @@ for (const lineEnding of ["LF", "CRLF"]) {
   });
 }
 
+for (const lineEnding of ["LF", "CRLF"]) {
+  test(`backslash continuations detect present and missing scripts with ${lineEnding}`, () => {
+    const separator = lineEnding === "CRLF" ? "\r\n" : "\n";
+    withCleanSkillCommand(
+      `npm run \\${separator}  smoke${separator}npm run \\${separator}  missing`,
+      (report) => {
+        const stale = report.findings.filter((finding) => finding.code === "stale-validation-command");
+        assert.deepEqual(stale.map((finding) => finding.message), [
+          'SKILL.md references npm script "missing" but package.json does not define it.'
+        ]);
+        assert.equal(stale.some((finding) => finding.message.includes('"\\"')), false);
+      }
+    );
+  });
+}
+
+test("multiple backslash continuations form one shell command", () => {
+  withCleanSkillCommand("env \\\n  CI=1 \\\n  npm run missing", (report) => {
+    const stale = report.findings.filter((finding) => finding.code === "stale-validation-command");
+    assert.deepEqual(stale.map((finding) => finding.message), [
+      'SKILL.md references npm script "missing" but package.json does not define it.'
+    ]);
+  });
+});
+
+test("lines without backslash continuations remain independent commands", () => {
+  withCleanSkillCommand("printf smoke\nnpm run missing", (report) => {
+    const stale = report.findings.filter((finding) => finding.code === "stale-validation-command");
+    assert.deepEqual(stale.map((finding) => finding.message), [
+      'SKILL.md references npm script "missing" but package.json does not define it.'
+    ]);
+  });
+});
+
 test("quoted prose and shell comments are not executable npm commands", () => {
   withCleanSkillCommand(
     'echo "npm run missing" && printf \'env CI=1 npm run also-missing\' # npm run commented-out',
