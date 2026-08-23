@@ -282,11 +282,29 @@ function extractCommands(markdown) {
   const commands = [];
   for (const block of parseMarkdownContexts(markdown).fencedCode) {
     if (!/^(?:sh|bash|shell)?(?:\s|$)/i.test(block.info)) continue;
-    for (const line of block.content) {
+    for (const line of joinShellContinuations(block.content)) {
       const command = line.trim().replace(/^\$ /, "");
       if (command) commands.push(command);
     }
   }
+  return commands;
+}
+
+function joinShellContinuations(lines) {
+  const commands = [];
+  let pending = "";
+
+  for (const line of lines) {
+    const trailingBackslashes = line.match(/\\+$/)?.[0].length ?? 0;
+    if (trailingBackslashes % 2 === 1) {
+      pending += line.slice(0, -1);
+      continue;
+    }
+    commands.push(pending + line);
+    pending = "";
+  }
+
+  if (pending) commands.push(pending);
   return commands;
 }
 
