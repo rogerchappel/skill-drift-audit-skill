@@ -71,6 +71,49 @@ test("validation commands inspect every npm run in a shell command chain", () =>
   }
 });
 
+test("validation commands inspect both sides of background and AND operators", () => {
+  withCleanSkillCommand(
+    "CI=1 npm run missing-left & env FORCE_COLOR=0 npm run missing-right && npm run missing-and",
+    (report) => {
+      const stale = report.findings.filter((finding) => finding.code === "stale-validation-command");
+      assert.deepEqual(stale.map((finding) => finding.message), [
+        'SKILL.md references npm script "missing-left" but package.json does not define it.',
+        'SKILL.md references npm script "missing-right" but package.json does not define it.',
+        'SKILL.md references npm script "missing-and" but package.json does not define it.'
+      ]);
+    }
+  );
+});
+
+test("quoted and escaped ampersands do not split shell commands", () => {
+  withCleanSkillCommand(
+    'printf "npm run quoted & npm run also-quoted" & printf escaped \\& npm run ignored',
+    (report) => {
+      assert.equal(report.findings.some((finding) => finding.code === "stale-validation-command"), false);
+    }
+  );
+});
+
+test("CLI reports missing scripts after a background operator", () => {
+  const fixture = "fixtures/clean-skill/SKILL.md";
+  const original = fs.readFileSync(fixture, "utf8");
+  fs.writeFileSync(fixture, original.replace(
+    "npm run smoke\n",
+    "npm run smoke & CI=1 npm run missing-background\n"
+  ));
+  try {
+    const output = execFileSync(
+      "node",
+      ["bin/skill-drift-audit.js", "scan", "fixtures/clean-skill", "--format", "json"],
+      { encoding: "utf8" }
+    );
+    const report = JSON.parse(output);
+    assert.equal(report.findings.some((finding) => finding.message.includes('"missing-background"')), true);
+  } finally {
+    fs.writeFileSync(fixture, original);
+  }
+});
+
 for (const { label, command } of [
   { label: "leading assignment", command: "CI=1 npm run missing -- --verbose" },
   { label: "multiple assignments", command: "NODE_ENV=test FORCE_COLOR=0 npm run missing argument" },

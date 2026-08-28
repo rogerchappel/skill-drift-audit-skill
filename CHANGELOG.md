@@ -7,6 +7,8 @@
 - Document the clean-checkout release verification path.
 - Reject missing or unsupported `--format` values with a nonzero CLI usage error.
 - Validate argument-bearing `npm run` commands by their package script name.
+- Inspect npm scripts on both sides of shell background (`&`) operators while
+  preserving quoted and escaped ampersands.
 
 ## 0.1.0
 
