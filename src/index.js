@@ -189,7 +189,7 @@ function splitShellSegments(command) {
       quote = character;
     } else if (character === "#" && (index === 0 || /\s/.test(command[index - 1]))) {
       break;
-    } else if (character === ";" || character === "|" || (character === "&" && command[index + 1] === "&")) {
+    } else if (character === ";" || character === "|" || character === "&") {
       if (segment.trim()) segments.push(segment);
       segment = "";
       if (command[index + 1] === character) index += 1;
