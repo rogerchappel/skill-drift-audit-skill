@@ -38,6 +38,10 @@ to scan the current directory.
 - Missing changelog or release-candidate notes.
 - Obvious placeholder secret values in skill instructions.
 
+Validation command chains may use the shell list operators `;`, `&`, `&&`,
+`||`, and pipelines (`|`). Quoted or escaped operator characters remain part of
+their command arguments.
+
 Required headings use Markdown ATX syntax at levels 1 through 6. They may have
 up to three leading spaces and an optional, whitespace-separated closing `#`
 sequence. Headings are recognized only in Markdown prose, not inside fenced or
